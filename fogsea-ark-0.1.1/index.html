@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>雾海方舟</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="grain"></div><div id="hurtFx"></div><div id="coreFx"></div>
+
+<div id="hud" class="hidden">
+  <div id="topLeft" class="panel">
+    <span id="logoMini">雾海方舟</span>
+    <span id="phaseChip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg><em id="phaseName" style="font-style:normal">白昼</em></span>
+    <span id="dayLabel">第 1 日</span>
+    <span id="nightLabel">夜 0/–</span>
+    <span id="phaseBarWrap"><span id="phaseBar"></span></span>
+  </div>
+  <div id="topRight">
+    <button class="iconBtn" id="btnNight" aria-label="提前入夜" title="提前入夜 (N)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 14A8.5 8.5 0 019.5 3.5 8.5 8.5 0 1020 14z"/></svg></button>
+    <button class="iconBtn" id="btnSpeed" aria-label="速度">1×</button>
+    <button class="iconBtn" id="btnMute" aria-label="音效"></button>
+    <button class="iconBtn" id="btnPause" aria-label="暂停"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg></button>
+  </div>
+  <div id="banner"><h2></h2><p></p></div>
+  <div id="toasts"></div>
+
+  <div id="playerPanel" class="panel">
+    <div id="ppTop">
+      <div id="lvlBadge"><b id="lvlNum">1</b><i>等级</i></div>
+      <div style="min-width:0">
+        <div id="ppName">守灯人</div>
+        <div id="ppStacks"></div>
+      </div>
+    </div>
+    <div class="bar" id="hpBar"><span></span><label><em style="font-style:normal">生命</em><em style="font-style:normal" id="hpTxt">100/100</em></label></div>
+    <div class="bar" id="enBar"><span></span><label><em style="font-style:normal" id="enLabel">雾能</em><em style="font-style:normal" id="enTxt">100</em></label></div>
+    <div class="bar" id="shieldBar" style="display:none"><span></span><label><em style="font-style:normal">护盾</em><em style="font-style:normal" id="shieldTxt">0</em></label></div>
+    <div class="bar" id="xpBar"><span></span></div>
+    <div id="cdRow">
+      <div class="cdPip" id="dashPip"><span class="fill"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 3L4 14h6l-1 7 9-11h-6l1-7z"/></svg><em>冲刺 <span class="kb kb-hint">空格</span></em></div>
+      <div class="cdPip" id="novaPip"><span class="fill"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" opacity=".5"/></svg><em>雾爆 <span class="kb kb-hint">Q</span></em></div>
+    </div>
+  </div>
+
+  <div id="handArea">
+    <div id="handMeta">
+      <div id="resRow"></div>
+      <span class="pileChip draw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="12" height="16" rx="2"/><path d="M8 7h12v14H8"/></svg>牌库 <b id="drawN">0</b></span>
+      <span class="pileChip disc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>弃牌 <b id="discN">0</b></span>
+      <span class="pileChip limit">手牌 <b id="handN">0/5</b></span>
+      <span class="pileChip rec">回收 <b id="recN">0%</b></span>
+      <button id="repairBtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a4 4 0 00-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 005.4-5.4l-2.7 2.7-3-3 2.7-2.7z"/></svg>修复 <span class="kb kb-hint">F</span></button>
+    </div>
+    <div id="handRow"></div>
+  </div>
+
+  <div id="rightBottom">
+    <div id="coreWrap" class="panel">
+      <div class="cwTop"><span>⬢ 方舟核心</span><span id="coreTxt">600/600</span></div>
+      <div class="bar" id="coreBar"><span></span></div>
+    </div>
+    <div id="mmWrap" class="panel"><canvas id="mm" width="132" height="132"></canvas></div>
+  </div>
+</div>
+
+<div id="dragCard"></div>
+
+<div id="touchUI">
+  <div id="stick"><div id="knob"></div></div>
+  <button class="tBtn" id="btnDash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 3L4 14h6l-1 7 9-11h-6l1-7z"/></svg>冲刺</button>
+  <button class="tBtn" id="btnNova"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" opacity=".5"/></svg>雾爆</button>
+</div>
+
+<div class="overlay show" id="menu">
+  <div class="scrim"></div>
+  <div id="menuPanel" data-view="title">
+    <section class="menuView" data-view="title">
+      <div class="menuHead">
+        <h1 id="gameTitle">雾海方舟</h1>
+        <div id="gameSub">孤灯不灭</div>
+      </div>
+      <div class="menuFoot">
+        <button id="startBtn">开始</button>
+        <button id="btnContinue">继续</button>
+        <button class="mBtn book" id="btnCodexMenu">图鉴</button>
+      </div>
+    </section>
+    <section class="menuView" data-view="prep">
+      <div class="prepHead"><h2>出航准备</h2></div>
+      <div class="menuScroll">
+        <div class="secT">雾潮强度</div>
+        <div id="diffRow"></div>
+        <p class="prepNote">第 2 日黎明可转职「法师」：生命上限降低，以法力施法，手牌上限提高。</p>
+        <div class="secT">文明传承</div>
+        <div id="emberRow">
+          <span id="emberCount"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 4-4 6-4 11a4 4 0 008 0c0-2-1-3-1-5 2 1 4 3 4 6a7 7 0 01-14 0C5 8 11 6 12 2z"/></svg><span id="emberNum">0</span> 火种</span>
+          <span id="bestChip"></span>
+        </div>
+        <div id="blessList"></div>
+        <div class="secT">操作</div>
+        <div id="ctrlGrid">
+          <div><span class="kb">WASD</span>移动</div>
+          <div><span class="kb">自动</span>挥刃 / 采集</div>
+          <div><span class="kb">点选 / 拖拽</span>卡牌落地</div>
+          <div><span class="kb">空格</span>冲刺<span class="kb">N</span>入夜</div>
+          <div><span class="kb">Q</span>雾爆<span class="kb">F</span>修复</div>
+          <div><span class="kb">K</span>随时存档<span class="kb">S</span>暂停存档</div>
+        </div>
+      </div>
+      <div class="prepFoot">
+        <button id="launchBtn">启航</button>
+        <button class="mBtn" id="btnPrepBack">返回</button>
+      </div>
+    </section>
+    <section class="menuView" data-view="load">
+      <div class="prepHead"><h2>存档</h2></div>
+      <div class="menuScroll"><div id="menuSlotList"></div></div>
+      <div class="prepFoot"><button class="mBtn" id="btnLoadBack">返回</button></div>
+    </section>
+  </div>
+</div>
+
+<div class="overlay" id="dawnOv" role="dialog" aria-modal="true">
+  <div class="scrim"></div>
+  <div class="dawnBox">
+    <div class="dawnStep" id="dawnStep">1 / 2</div>
+    <div class="dawnTitle" id="dawnTitle">黎明</div>
+    <div class="dawnSub" id="dawnSub"></div>
+    <div class="pickRow" id="dawnRow"></div>
+    <button class="skipBtn" id="dawnSkip">跳过</button>
+  </div>
+</div>
+
+<div class="overlay" id="removeOv" role="dialog" aria-modal="true">
+  <div class="scrim"></div>
+  <div id="removeBox">
+    <div class="rmHead">
+      <h2 id="rmTitle">拆解</h2>
+      <p id="rmSub"></p>
+    </div>
+    <div id="rmList"></div>
+    <div class="rmFoot"><button class="skipBtn" id="rmCancel" style="margin:0">取消</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="swapOv" role="dialog" aria-modal="true">
+  <div class="scrim"></div>
+  <div id="removeBox">
+    <div class="rmHead">
+      <h2 id="swapTitle">手牌已满</h2>
+      <p id="swapSub"></p>
+    </div>
+    <div id="swapList"></div>
+    <div class="rmFoot"><button class="skipBtn" id="swapSkip" style="margin:0">跳过</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="pauseOv" role="dialog" aria-modal="true">
+  <div class="scrim"></div>
+  <div class="modalBox">
+    <h2>雾海静止</h2>
+    <div class="msub"></div>
+    <button class="mBtn primary" id="btnResume">继续</button>
+    <button class="mBtn book" id="btnSave">存档</button>
+    <button class="mBtn book" id="btnCodexPause">图鉴</button>
+    <button class="mBtn" id="btnRestart">重新开始</button>
+    <button class="mBtn" id="btnToTitle">返回标题</button>
+  </div>
+</div>
+
+<div class="overlay" id="endOv" role="dialog" aria-modal="true">
+  <div class="scrim"></div>
+  <div class="modalBox">
+    <h2 id="endTitle"></h2>
+    <div class="msub" id="endSub"></div>
+    <div id="statsGrid"></div>
+    <div id="emberGainRow">
+      <svg viewBox="0 0 24 24" fill="#ff8a3d"><path d="M12 2c1 4-4 6-4 11a4 4 0 008 0c0-2-1-3-1-5 2 1 4 3 4 6a7 7 0 01-14 0C5 8 11 6 12 2z"/></svg>
+      <span>火种</span><span id="emberGain">+0</span><span id="emberTotal"></span>
+    </div>
+    <button class="mBtn primary" id="btnAgain">再次远航</button>
+    <button class="mBtn book" id="btnEndless">继续守护</button>
+    <button class="mBtn" id="btnTitle2">返回标题</button>
+  </div>
+</div>
+
+<div class="overlay" id="slotOv" role="dialog" aria-modal="true" aria-label="存档位">
+  <div class="scrim"></div>
+  <div class="modalBox slotBox">
+    <h2 id="slotTitle">存档位</h2>
+    <div id="slotList"></div>
+    <button class="mBtn" id="slotDelete">删除存档</button>
+    <button class="mBtn" id="slotBack">返回</button>
+  </div>
+</div>
+
+<div class="overlay" id="codexOv" role="dialog" aria-modal="true" aria-label="雾海图鉴">
+  <div class="scrim"></div>
+  <div id="codexPanel">
+    <div class="cxHead">
+      <h2>雾海图鉴</h2>
+      <div class="cxHeadMeta"><span id="cxCount">— 条</span><span class="cxProg"><i id="cxProgFill"></i></span></div>
+      <button id="cxClose" aria-label="关闭"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="cxTools">
+      <label class="cxSearchWrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        <input id="cxSearch" type="search" placeholder="搜索名称 / 效果…" autocomplete="off">
+      </label>
+      <div id="cxCats"></div>
+    </div>
+    <div class="cxBody">
+      <div id="cxList"></div>
+      <div id="cxDetail">
+        <div class="cxDTop">
+          <div class="cxVis"><canvas id="cxPreview"></canvas><div id="cxIcon"></div></div>
+          <div class="cxDHead"><div id="cxName">—</div><div id="cxTags"></div><p id="cxDesc"></p></div>
+        </div>
+        <div id="cxStats"></div>
+        <div class="cxRelT">相关条目</div>
+        <div id="cxRel"></div>
+      </div>
+    </div>
+    <div class="cxFoot"><span id="cxFootL">雾海方舟 · 记录册</span><span class="kb-hint">↑ ↓ 切换 · Esc 关闭</span></div>
+  </div>
+</div>
+
+<script src="js/00-core.js"></script>
+<script src="js/01-audio.js"></script>
+<script src="js/02-world.js"></script>
+<script src="js/03-data.js"></script>
+<script src="js/04-state.js"></script>
+<script src="js/05-input.js"></script>
+<script src="js/06-hand.js"></script>
+<script src="js/07-combat.js"></script>
+<script src="js/07b-spells.js"></script>
+<script src="js/08-progress.js"></script>
+<script src="js/09-render.js"></script>
+<script src="js/10-ui.js"></script>
+<script src="js/11-main.js"></script>
+</body>
+</html>
